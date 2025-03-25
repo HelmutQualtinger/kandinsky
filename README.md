@@ -2,7 +2,7 @@
 
 An interactive web-based art generator inspired by the works of Wassily Kandinsky, a pioneer of abstract art.
 
-![Kandinsky Art Generator](https://github.com/yourusername/kandinsky/raw/main/preview.png)
+![Kandinsky Art Generator](kandinsky.png)
 
 ## Overview
 
