@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kandinsky-Stil Kunstgenerator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #357ABD;
+        }
+        .canvas-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            max-width: 100%;
+        }
+        .presets {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            flex: 1;
+            min-width: 100px;
+        }
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kandinsky-Stil Kunstgenerator</h1>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label for="width">Breite:</label>
+                <input type="range" id="width" min="400" max="1200" value="800" step="100">
+                <span id="width-value">800</span>px
+                
+                <label for="height">Höhe:</label>
+                <input type="range" id="height" min="400" max="1200" value="800" step="100">
+                <span id="height-value">800</span>px
+                
+                <label for="num-shapes">Anzahl der Formen:</label>
+                <input type="range" id="num-shapes" min="20" max="150" value="60" step="10">
+                <span id="shapes-value">60</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="background">Hintergrundfarbe:</label>
+                <input type="color" id="background" value="#FFFFFF">
+                
+                <label for="color-theme">Farbpalette:</label>
+                <select id="color-theme">
+                    <option value="classic">Klassisch Kandinsky</option>
+                    <option value="warm">Warme Töne</option>
+                    <option value="cool">Kühle Töne</option>
+                    <option value="monochrome">Monochrom</option>
+                    <option value="pastel">Pastell</option>
+                </select>
+                
+                <label for="complexity">Komplexität:</label>
+                <input type="range" id="complexity" min="1" max="10" value="5">
+                <span id="complexity-value">5</span>
+            </div>
+            
+            <div class="control-group">
+                <label>Voreinstellungen:</label>
+                <div class="presets">
+                    <button class="preset-btn" data-preset="komposition8">Komposition VIII</button>
+                    <button class="preset-btn" data-preset="farbstudie">Farbstudie</button>
+                    <button class="preset-btn" data-preset="gelb-rot-blau">Gelb-Rot-Blau</button>
+                </div>
+                
+                <button id="generate-btn" style="margin-top: 20px;">Neues Kunstwerk generieren</button>
+                <button id="download-btn">Bild herunterladen</button>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="800"></canvas>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Inspiriert von Wassily Kandinsky (1866-1944), einem der Pioniere der abstrakten Kunst</p>
+    </footer>
+
+    <script>
+        // Farben und Paletten
+        const colorPalettes = {
+            classic: [
+                '#FF0000', '#0000FF', '#FFFF00', '#00FF00', '#FF00FF', 
+                '#FFA500', '#800080', '#008080', '#000000', '#FF5733',
+                '#C70039', '#900C3F', '#581845', '#2471A3', '#229954'
+            ],
+            warm: [
+                '#FF0000', '#FF4500', '#FF8C00', '#FFA500', '#FFD700',
+                '#FFFF00', '#FF1493', '#C71585', '#DB7093', '#CD5C5C',
+                '#8B0000', '#A52A2A', '#B22222', '#E9967A', '#F08080'
+            ],
+            cool: [
+                '#0000FF', '#00FFFF', '#008B8B', '#1E90FF', '#00BFFF',
+                '#87CEEB', '#6495ED', '#4682B4', '#483D8B', '#6A5ACD',
+                '#7B68EE', '#9370DB', '#8A2BE2', '#9932CC', '#9400D3'
+            ],
+            monochrome: [
+                '#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666',
+                '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6',
+                '#F2F2F2', '#FFFFFF'
+            ],
+            pastel: [
+                '#FFB6C1', '#FFC0CB', '#FFD700', '#FFDAB9', '#FFDEAD',
+                '#E0FFFF', '#F0FFFF', '#F5FFFA', '#F8F8FF', '#FFFACD',
+                '#FAFAD2', '#FFFAF0', '#F0FFF0', '#FFF0F5', '#E6E6FA'
+            ]
+        };
+
+        // Voreinstellungen
+        const presets = {
+            komposition8: {
+                width: 1000,
+                height: 800,
+                background: '#F5F5DC',
+                palette: 'classic',
+                shapes: 80,
+                complexity: 8
+            },
+            farbstudie: {
+                width: 800,
+                height: 800,
+                background: '#FFFFFF',
+                palette: 'cool',
+                shapes: 50,
+                complexity: 5
+            },
+            gelbRotBlau: {
+                width: 900,
+                height: 1000,
+                background: '#FFFFF0',
+                palette: 'warm',
+                shapes: 70,
+                complexity: 7
+            }
+        };
+
+        // DOM-Elemente
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const generateBtn = document.getElementById('generate-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const widthSlider = document.getElementById('width');
+        const heightSlider = document.getElementById('height');
+        const widthValue = document.getElementById('width-value');
+        const heightValue = document.getElementById('height-value');
+        const numShapesSlider = document.getElementById('num-shapes');
+        const shapesValue = document.getElementById('shapes-value');
+        const backgroundPicker = document.getElementById('background');
+        const colorTheme = document.getElementById('color-theme');
+        const complexitySlider = document.getElementById('complexity');
+        const complexityValue = document.getElementById('complexity-value');
+        const presetButtons = document.querySelectorAll('.preset-btn');
+
+        // Eventlistener für Slider
+        widthSlider.addEventListener('input', () => {
+            widthValue.textContent = widthSlider.value;
+            canvas.width = parseInt(widthSlider.value);
+        });
+
+        heightSlider.addEventListener('input', () => {
+            heightValue.textContent = heightSlider.value;
+            canvas.height = parseInt(heightSlider.value);
+        });
+
+        numShapesSlider.addEventListener('input', () => {
+            shapesValue.textContent = numShapesSlider.value;
+        });
+
+        complexitySlider.addEventListener('input', () => {
+            complexityValue.textContent = complexitySlider.value;
+        });
+
+        // Eventlistener für Buttons
+        generateBtn.addEventListener('click', generateArtwork);
+        downloadBtn.addEventListener('click', downloadArtwork);
+
+        // Eventlistener für Voreinstellungen
+        presetButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const preset = presets[button.dataset.preset];
+                widthSlider.value = preset.width;
+                heightSlider.value = preset.height;
+                widthValue.textContent = preset.width;
+                heightValue.textContent = preset.height;
+                backgroundPicker.value = preset.background;
+                colorTheme.value = preset.palette;
+                numShapesSlider.value = preset.shapes;
+                shapesValue.textContent = preset.shapes;
+                complexitySlider.value = preset.complexity;
+                complexityValue.textContent = preset.complexity;
+                
+                canvas.width = preset.width;
+                canvas.height = preset.height;
+                
+                generateArtwork();
+            });
+        });
+
+        // Funktion zum Generieren eines zufälligen Wertes
+        function random(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        // Funktion zum Generieren einer zufälligen Ganzzahl
+        function randomInt(min, max) {
+            return Math.floor(random(min, max + 1));
+        }
+
+        // Funktion zum Zeichnen eines Kreises
+        function drawCircle(x, y, radius, fillColor, strokeColor = null, lineWidth = 0) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            
+            if (strokeColor) {
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            }
+        }
+
+        // Funktion zum Zeichnen eines Rechtecks
+        function drawRectangle(x, y, width, height, color, alpha = 1) {
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, width, height);
+            ctx.globalAlpha = 1;
+        }
+
+        // Funktion zum Zeichnen eines Polygons
+        function drawPolygon(vertices, color, alpha = 1) {
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.moveTo(vertices[0][0], vertices[0][1]);
+            
+            for (let i = 1; i < vertices.length; i++) {
+                ctx.lineTo(vertices[i][0], vertices[i][1]);
+            }
+            
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        // Funktion zum Zeichnen einer Linie
+        function drawLine(x1, y1, x2, y2, color, lineWidth) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+
+        // Hauptfunktion zum Generieren des Kunstwerks
+        function generateArtwork() {
+            const width = parseInt(widthSlider.value);
+            const height = parseInt(heightSlider.value);
+            const numShapes = parseInt(numShapesSlider.value);
+            const backgroundColor = backgroundPicker.value;
+            const selectedPalette = colorPalettes[colorTheme.value];
+            const complexity = parseInt(complexitySlider.value);
+            
+            // Canvas zurücksetzen
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Hintergrund zeichnen
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Linien hinzufügen (basierend auf Komplexität)
+            const numLines = 10 + complexity * 2;
+            for (let i = 0; i < numLines; i++) {
+                const x1 = randomInt(0, width);
+                const y1 = randomInt(0, height);
+                const x2 = randomInt(0, width);
+                const y2 = randomInt(0, height);
+                const lineWidth = random(0.5, 0.5 + complexity / 2);
+                const color = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                
+                drawLine(x1, y1, x2, y2, color, lineWidth);
+            }
+            
+            // Kreise hinzufügen
+            const numCircles = Math.floor(numShapes / 3);
+            for (let i = 0; i < numCircles; i++) {
+                const x = randomInt(0, width);
+                const y = randomInt(0, height);
+                const radius = randomInt(5, 10 + complexity * 5);
+                const color = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                const alpha = random(0.5, 1.0);
+                
+                ctx.globalAlpha = alpha;
+                drawCircle(x, y, radius, color);
+                ctx.globalAlpha = 1.0;
+                
+                // Manchmal einen Kreis mit Rand hinzufügen
+                if (Math.random() > 0.7) {
+                    const borderColor = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                    const lineWidth = random(1, 3);
+                    drawCircle(x, y, radius, 'rgba(0,0,0,0)', borderColor, lineWidth);
+                }
+            }
+            
+            // Rechtecke und Quadrate hinzufügen
+            const numRectangles = Math.floor(numShapes / 3);
+            for (let i = 0; i < numRectangles; i++) {
+                const x = randomInt(0, width);
+                const y = randomInt(0, height);
+                const w = randomInt(10, 20 + complexity * 6);
+                const h = randomInt(10, 20 + complexity * 6);
+                const color = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                const alpha = random(0.5, 1.0);
+                
+                drawRectangle(x, y, w, h, color, alpha);
+            }
+            
+            // Dreiecke und andere Polygone hinzufügen
+            const numPolygons = Math.floor(numShapes / 3);
+            for (let i = 0; i < numPolygons; i++) {
+                const vertices = [];
+                const sides = randomInt(3, 3 + Math.min(3, Math.floor(complexity / 3)));
+                
+                for (let j = 0; j < sides; j++) {
+                    vertices.push([randomInt(0, width), randomInt(0, height)]);
+                }
+                
+                const color = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                const alpha = random(0.5, 1.0);
+                
+                drawPolygon(vertices, color, alpha);
+            }
+            
+            // Farbpunkte hinzufügen
+            const numPoints = 10 + complexity * 3;
+            for (let i = 0; i < numPoints; i++) {
+                const x = randomInt(0, width);
+                const y = randomInt(0, height);
+                const pointSize = randomInt(1, 1 + Math.floor(complexity / 2));
+                const color = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                
+                drawCircle(x, y, pointSize, color);
+            }
+            
+            // Konzentrische Kreise hinzufügen
+            if (complexity > 3) {
+                const numConcentricSets = Math.floor(complexity / 2);
+                for (let i = 0; i < numConcentricSets; i++) {
+                    const centerX = randomInt(100, width - 100);
+                    const centerY = randomInt(100, height - 100);
+                    const numRings = randomInt(2, 2 + Math.floor(complexity / 2));
+                    
+                    for (let j = 1; j <= numRings; j++) {
+                        const radius = j * randomInt(10, 10 + complexity * 2);
+                        const color = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                        const lineWidth = random(1, 1 + complexity / 3);
+                        
+                        drawCircle(centerX, centerY, radius, 'rgba(0,0,0,0)', color, lineWidth);
+                    }
+                }
+            }
+            
+            // Gitter-Elemente hinzufügen
+            if (complexity > 5 && Math.random() > 0.3) {
+                const gridX = randomInt(100, width - 200);
+                const gridY = randomInt(100, height - 200);
+                const gridSize = randomInt(100, 100 + complexity * 15);
+                const cells = 3 + Math.floor(complexity / 3);
+                
+                for (let i = 0; i < cells; i++) {
+                    for (let j = 0; j < cells; j++) {
+                        if (Math.random() > 0.3) {
+                            const cellX = gridX + i * (gridSize / cells);
+                            const cellY = gridY + j * (gridSize / cells);
+                            const cellSize = (gridSize / cells) - 2;
+                            const color = selectedPalette[randomInt(0, selectedPalette.length - 1)];
+                            const alpha = random(0.3, 0.8);
+                            
+                            drawRectangle(cellX, cellY, cellSize, cellSize, color, alpha);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Funktion zum Herunterladen des Kunstwerks
+        function downloadArtwork() {
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'kandinsky_artwork.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initial ein Kunstwerk generieren
+        generateArtwork();
+    </script>
+</body>
+</html>
